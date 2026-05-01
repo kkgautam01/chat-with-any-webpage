@@ -1,5 +1,6 @@
 from data import process, query_llm
 from flask import Flask, render_template, request, jsonify
+import os
 
 app = Flask(__name__)
 
@@ -53,4 +54,5 @@ def ask():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))  # Render uses PORT env
+    app.run(host="0.0.0.0", port=port)
