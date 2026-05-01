@@ -10,6 +10,9 @@ vector_store = None
 def index():
     return render_template('index.html')
 
+@app.route("/health")
+def health():
+    return "ok", 200
 
 @app.route('/save_url', methods=['POST'])
 def save_url():
