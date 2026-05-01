@@ -1,7 +1,7 @@
 import os
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import Chroma
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_core.documents import Document
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
@@ -124,15 +124,15 @@ def load_files(url: str) -> list[Document]:
     text = _html_to_text(html)
 
     # Heuristic: if we got less than 300 chars the page is probably JS-rendered
-    if len(text) < 300:
-        try:
-            html = _fetch_with_playwright(url)
-            text = _html_to_text(html)
-        except Exception as e:
-            raise ValueError(
-                f"Page appears JS-rendered but Playwright failed: {e}\n"
-                "Install it with: pip install playwright && playwright install chromium"
-            )
+    # if len(text) < 300:
+    #     try:
+    #         html = _fetch_with_playwright(url)
+    #         text = _html_to_text(html)
+    #     except Exception as e:
+    #         raise ValueError(
+    #             f"Page appears JS-rendered but Playwright failed: {e}\n"
+    #             "Install it with: pip install playwright && playwright install chromium"
+    #         )
 
     if not text.strip():
         raise ValueError("Could not extract any text from that URL.")
@@ -159,14 +159,16 @@ def split(docs: list[Document]) -> list[Document]:
 def embed():
     if os.environ.get("ENV_RAG") != 'prod':
         return OllamaEmbeddings(model="mxbai-embed-large")
-    # return GoogleGenerativeAIEmbeddings(
-    #     model="gemini-embedding-001",
-    #     google_api_key=os.environ["GEMINI_API_KEY"]
-    # )
 
-    return HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    google_api_key=os.environ.get("GEMINI_API_KEY")
+    return GoogleGenerativeAIEmbeddings(
+        model="gemini-embedding-001",
+        google_api_key=google_api_key
     )
+
+    # return HuggingFaceEmbeddings(
+    #     model_name="sentence-transformers/all-MiniLM-L6-v2"
+    # )
 
 def get_llm():
     # return ChatGoogleGenerativeAI(
@@ -183,11 +185,11 @@ def get_llm():
 
 # ── vector store ──────────────────────────────────────────────────────────────
 
-def save(chunks: list[Document], embeddings) -> FAISS:
-    return FAISS.from_documents(chunks, embeddings)
+def save(chunks: list[Document], embeddings) -> Chroma:
+    return Chroma.from_documents(chunks, embeddings)
 
 
-def process(url: str) -> FAISS:
+def process(url: str) -> Chroma:
     docs   = load_files(url)
     chunks = split(docs)
     embs   = embed()
@@ -196,13 +198,13 @@ def process(url: str) -> FAISS:
 
 # ── retrieval ─────────────────────────────────────────────────────────────────
 
-def mmr_search(vector_store: FAISS, query: str, k: int = 12) -> list[Document]:
+def mmr_search(vector_store: Chroma, query: str, k: int = 12) -> list[Document]:
     return vector_store.max_marginal_relevance_search(
         query, k=k, fetch_k=25, lambda_mult=0.55
     )
 
 
-def similarity_search(vector_store: FAISS, query: str, k: int = 12) -> list[Document]:
+def similarity_search(vector_store: Chroma, query: str, k: int = 12) -> list[Document]:
     return vector_store.similarity_search(query, k=k)
 
 
@@ -216,7 +218,7 @@ def merge_results(a: list[Document], b: list[Document]) -> list[Document]:
     return merged
 
 
-def retrieve(vector_store: FAISS, query: str, llm)-> list[Document]:
+def retrieve(vector_store: Chroma, query: str, llm)-> list[Document]:
     """
     Dual-path retrieval:
       Path A — embed question directly via MMR  (reliable baseline)

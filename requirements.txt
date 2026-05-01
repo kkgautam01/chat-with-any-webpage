@@ -16,7 +16,7 @@ requests
 lxml
 numpy
 flask
-
-playwright
+chromadb
+#playwright
 
 gunicorn
