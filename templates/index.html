@@ -1,0 +1,40 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InsightText AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+<div class="chat-container">
+
+    <div class="chat-header">InsightText AI – Chat with Any Web Content</div>
+
+    <!-- STEP 1: URL SETUP -->
+    <div id="setup-screen" class="setup-screen">
+        <input id="urlInput" type="text" placeholder="Enter a webpage URL to start chatting with its content" />
+        <!-- id added so JS can disable it during loading -->
+        <button id="loadBtn" onclick="saveUrl()">Load Website</button>
+        <div id="loadingIndicator" class="loader">Processing…</div>
+        <!-- error message injected here by JS if needed -->
+    </div>
+
+    <!-- STEP 2: CHAT UI -->
+    <div id="chat-screen" class="chat-screen">
+        <ul id="messages" class="message-list"></ul>
+
+        <div class="input-container">
+            <input type="text" id="question" placeholder="Ask something about the page…" />
+            <button id="sendBtn" onclick="askQuestion()">Send</button>
+        </div>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
